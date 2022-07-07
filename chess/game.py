@@ -76,14 +76,41 @@ class Game:
         binarized[3] = (A>>0)&1
 
         # 4th column is who's turn it is
-        binarized[4] = (self.board.turn*1.0)
+        binarized[4] = (self.board.turn*1.0) 
+        #I think just drop the matrix (and this last col) and make it a 257 bit input FC network
+        # is conv net really needed? 
 
-        return binarized
+        return binarized.reshape((1,5,8,8))
 
 
-
+    def action_space(self):
+        return list(self.board.legal_moves)
                 
+
+    def play(self,ai,is_ai_white=False):
+
+        self.board.reset()
+        is_ai_turn = is_ai_white
+
+        while self.board.outcome() is None:
+            print(self.board)
+            print("=======================")
+            move = ai.policy_evaluation(self) if is_ai_turn else input(f"Moving as {'White' if self.board.turn else 'Black'}. Enter move in SAN here: ") 
+            self.board.push(move) if is_ai_turn else self.board.push_san(move)
+            is_ai_turn = not is_ai_turn
+        
+        print(self.board)
+        print(f"GAME OVER {self.board.outcome.result()}")
+
+
+
+
+                    
+
             
+
+
+
 
 
 
@@ -93,5 +120,6 @@ if __name__ == "__main__":
     print(game.board)
     print(serial)
     print(serial.shape)
+
 
     
