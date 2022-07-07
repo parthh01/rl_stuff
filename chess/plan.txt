@@ -1,56 +1,42 @@
 
-vaguely remember watching some geohot stream where he sets up a bit-wise representation, 
+vaguely remember watching some geohot stream where he sets up a bit-wise representation of chess for RL bot as well I think, 
 making my own here i'm sure (I hope) it's similar 
+
+EDIT: gave up trying to come up with a good representation myself, will just use his. Not going to use game DB though. 
 
 state representation :- 
 
     pieces: 
-        8x pawns 
-        2x rooks 
-        2x bishops 
-        2x knights 
+        1x pawns
+        1x rooks (x2 castle available)
+        1x bishops 
+        1x knights 
         1x queen 
         1x king
+        1x blank (x2 en passant available)
         ------------
-        2^4 pieces (x2 white and black )
+        15 distinct piece-states (white and black )
 
-    so 2^5 possible inputs representing which pieces are on the board 
+    so 15 possible inputs representing which pieces are on the board 
 
-
-    special states: 
-         - castling available (x4) Kingside, queenside  + black/white
-         - en passant available (x2)
-    
-    2^3 inputs representing special state space 
 
     2^1 inputs representing who's turn it is to move 
 
 
-    action inputs: 
-        3 possible options per square: 
-            - moving a piece TO the square
-            - moving a piece FROM the square 
-            - no change 
 
 final state: 
 
-    (33 (32 pcs + blank) possible options per square + 3 action options )* (64 squares)  = 12 bits representing the board 
-    6 possible state conditions                                    =  3 bits representing conditions 
+    (15 possible options per square  )* (64 squares)  = 4 bits * 64 squares = 256 bits representing the board 
     2 players (white or black)                                     = 1 bit representing player color 
 
 
 
 Reward Function :- 
 
- +X for a win, -X for a loss, 0 for draw? 
- this would make a draw values equally as unexplored non terminal states possibly leading the network 
- to forcibly explore bad moves when a draw would be the best possible outcome from that state? 
-
- how about +2X for a win +x for a draw, -X for a loss, this would make a draw more preferable than 
- unexplored positions? 
+ +X for a win, -X for a loss, 0 for draw
 
 
- 
+
 
 
 
