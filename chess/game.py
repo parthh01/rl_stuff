@@ -85,6 +85,13 @@ class Game:
 
     def action_space(self):
         return list(self.board.legal_moves)
+    
+    @staticmethod
+    def reward_function(board):
+        if board.outcome() is None: 
+            return 0 
+        res = board.outcome().result()
+        return eval(res) #1-0 means win for white 
                 
 
     def play(self,ai,is_ai_white=False):
@@ -120,6 +127,8 @@ if __name__ == "__main__":
     print(game.board)
     print(serial)
     print(serial.shape)
+    b = chess.Board('8/K7/8/1k6/8/8/8/8 w - - 0 72')
+    print(game.reward_function(b))
 
 
     

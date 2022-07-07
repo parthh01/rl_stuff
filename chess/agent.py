@@ -23,13 +23,13 @@ class Agent:
         'alpha': 0.01
     },
     MODEL_DIR = 'models',
-    model_path = None):
+    model_name = None):
         self.env = env 
         self.input_shape = env.state_serialization().shape[1:] # first dimension is input_size
         self.params = params 
-        self.value_network = models.load_model(model_path) if model_path else self.build_model()
-        self.target_network = models.load_model(model_path) if model_path else self.build_model()
-        self.target_network.set_weights(self.value_network.get_weights()) 
+        self.value_network = models.load_model(os.path.join(MODEL_DIR,model_name)) if model_name else self.build_model()
+        self.target_network = models.load_model(os.path.join(MODEL_DIR,model_name)) if model_name else self.build_model()
+        self.sync_networks()
         self.MODEL_DIR = MODEL_DIR
 
 
@@ -44,6 +44,9 @@ class Agent:
         model.compile(loss='mse', optimizer=Adam(learning_rate=self.params['alpha']))
         #print(self.model.summary())
         return model 
+    
+    def sync_networks(self):
+        self.target_network.set_weights(self.value_network.get_weights())
 
 
     def e_greedy_policy(self,learning=True):
@@ -65,13 +68,53 @@ class Agent:
         dirpath = os.path.join(self.MODEL_DIR,model_name)
         if os.path.exists(dirpath) and os.path.isdir(dirpath): shutil.rmtree(dirpath)
         self.value_network.save(dirpath)
+    
+
+    def learn(self,num_episodes):
+        training_history = []
+        for e in range(num_episodes):
+            self.env.board.reset()
+            #color = random.choice([1,0]) #1 is white but self play so doesnt matter 
+            ply = 0 
+            #episode_replay = []
+            terminal = False 
+            mse = []
+            while not terminal: 
+                s = self.env.state_serialization()
+                a = self.e_greedy_policy() # uses current state by default 
+                self.env.board.push(a)
+                r = self.env.reward_function(self.env.board)
+                s_prime = self.env.state_serialization() 
+                terminal = self.env.board.outcome() is not None
+                target_val = self.target_network.predict(tf.cast(s_prime,tf.float16))[0][0]
+                t = r if terminal else r + (self.params['gamma']*target_val)
+                hist = self.value_network.fit(s,np.array([[t]]),epochs=1,verbose=0)
+                #episode_replay.append((s,a,r,s_prime,terminal))
+                ply += 1
+                mse.append(hist.history['loss'])
+            
+            training_history.append(np.mean(mse))
+            self.sync_networks()
+
+            if (e+1) %(num_episodes//10) == 0: print(f"FINISHED TRAINING EPISODE {e+1} ({ply} moves) (avg mse: {training_history[-1]})")
+        
+        self.save_model('v1')
+
+
+
+                
+            
+
+
+
+
+                
 
 
 
 if __name__ == "__main__":
     from game import Game 
     game = Game()
-    agent = Agent(game)
-    q_a = agent.e_greedy_policy()
-    print(q_a)
+    agent = Agent(game,model_name='v1')
+    agent.learn(10)
     agent.save_model()
