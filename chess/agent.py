@@ -79,6 +79,8 @@ class Agent:
             #episode_replay = []
             terminal = False 
             mse = []
+            X = np.array(self.env.state_serialization()) #will remove this first value at the end 
+            Y = []
             while not terminal: 
                 s = self.env.state_serialization()
                 a = self.e_greedy_policy() # uses current state by default 
@@ -88,11 +90,16 @@ class Agent:
                 terminal = self.env.board.outcome() is not None
                 target_val = self.target_network.predict(tf.cast(s_prime,tf.float16))[0][0]
                 t = r if terminal else r + (self.params['gamma']*target_val)
-                hist = self.value_network.fit(s,np.array([[t]]),epochs=1,verbose=0)
-                #episode_replay.append((s,a,r,s_prime,terminal))
+                X = np.concatenate((X,s),axis=0)
+                Y.append(t)
                 ply += 1
-                mse.append(hist.history['loss'])
+
+            X = X[1:] 
+            Y = np.array(Y)
+            hist = self.value_network.fit(tf.cast(X,tf.float16),tf.cast(Y,tf.float16),epochs=1,verbose=0)   
+            mse.append(hist.history['loss'])
             
+
             training_history.append(np.mean(mse))
             self.sync_networks()
 
@@ -117,5 +124,5 @@ if __name__ == "__main__":
     from game import Game 
     game = Game()
     agent = Agent(game,model_name='v1') 
-    agent.learn(3)
+    agent.learn(20)
     #agent.save_model('v1')

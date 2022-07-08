@@ -36,6 +36,15 @@ Reward Function :-
  +X for a win, -X for a loss, 0 for draw
 
 
+Objective: 
+    create a value network to evaluate state positions using off policy Q learning. 
+
+TODO: 
+    convert 1-ply greedy search policy to x-ply minimax with ab pruning 
+    for training as well? could use the minimax with 1-epsilon probability 
+    
+
+
 
 
 
