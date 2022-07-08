@@ -3,6 +3,7 @@ from tensorflow.keras import models
 from game import Game 
 import numpy as np 
 import os
+import tensorflow as tf 
 
 class Player:
 
@@ -20,7 +21,7 @@ class Player:
         for a in action_space:
             env.board.push(a)
             state = env.state_serialization()
-            heuristic.append(self.value_network.predict(state)[0][0])
+            heuristic.append(self.value_network.predict(tf.cast(state,tf.float16))[0][0])
             env.board.pop()
             a_idx = np.argmax(heuristic) if env.board.turn else np.argmin(heuristic)
 
@@ -30,5 +31,5 @@ class Player:
 
 if __name__ == "__main__":
     game = Game() 
-    ai = Player(os.path.join('models','v0')) 
+    ai = Player('models/v1') 
     game.play(ai)

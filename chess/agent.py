@@ -96,10 +96,11 @@ class Agent:
             training_history.append(np.mean(mse))
             self.sync_networks()
 
-            if (e+1) %(num_episodes//10) == 0: print(f"FINISHED TRAINING EPISODE {e+1} ({ply} moves) (avg mse: {training_history[-1]})")
+            if (e+1) %(max(1,num_episodes//10)) == 0: print(f"FINISHED TRAINING EPISODE {e+1} ({ply} ply's) (avg mse: {training_history[-1]})")
         
+        print('saving model...')
         self.save_model('v1')
-
+        print('model saved')
 
 
                 
@@ -115,6 +116,6 @@ class Agent:
 if __name__ == "__main__":
     from game import Game 
     game = Game()
-    agent = Agent(game,model_name='v1')
-    agent.learn(10)
-    agent.save_model()
+    agent = Agent(game,model_name='v1') 
+    agent.learn(3)
+    #agent.save_model('v1')
