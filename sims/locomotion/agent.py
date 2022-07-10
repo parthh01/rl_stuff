@@ -36,21 +36,22 @@ def main():
     from network import ActorCriticNetwork
 
 
-    env = gym.make('Humanoid-v4')
+    #env = gym.make('Humanoid-v4')
+    env = gym.make('MountainCarContinuous-v0')
     s,info = env.reset(return_info=True)
     terminated = False 
-    for _ in range(1000):
-        if terminated: 
-            break
-        s_prime, r,terminated, info = env.step(env.action_space.sample())
-        env.render()
+    # for _ in range(10):
+    #     if terminated: 
+    #         break
+    #     s_prime, r,terminated, info = env.step(env.action_space.sample())
+    #     env.render()
         # print(env.action_space.sample().shape)
         # print(s.shape)
         # print(r)
         # print(np.concatenate((s,env.action_space.sample()),axis=0).shape)
     
     nn = ActorCriticNetwork(env)
-    print(nn.summary())
+    nn.learn(success_criterion=[195,100])
 
 
     print('done')
