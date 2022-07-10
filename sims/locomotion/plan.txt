@@ -1,0 +1,16 @@
+
+reference: https://towardsdatascience.com/policy-gradients-in-a-nutshell-8b72f9743c5d
+
+
+Objective: 
+on policy actor-critic method to control humanoid joints via torque on motors 
+with deterministic policy gradient for the actor and 
+huber loss(reward - critic value) for the critic
+
+
+single network with actor-critic synchronous output will need custom network class built on tf.nn 
+backpropagation for actor in separate actor critic networks will need custom loss function 
+
+tensorflow's implementation of an actor critic method is wack but it's the most supported one there is so 
+use this as reference: 
+https://www.tensorflow.org/tutorials/reinforcement_learning/actor_critic#:~:text=Actor%2DCritic%20methods&text=In%20the%20Actor%2DCritic%20method,based%20on%20the%20given%20policy.

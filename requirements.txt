@@ -6,5 +6,6 @@ tensorflow
 pyyaml 
 h5py
 progressbar
+tqdm
 mujoco 
 mujoco-py 
