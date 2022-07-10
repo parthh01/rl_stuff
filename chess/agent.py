@@ -96,6 +96,8 @@ class Agent:
 
             X = X[1:] 
             Y = np.array(Y)
+            print(X.shape)
+            print(Y.shape)
             hist = self.value_network.fit(tf.cast(X,tf.float16),tf.cast(Y,tf.float16),epochs=1,verbose=0)   
             mse.append(hist.history['loss'])
             

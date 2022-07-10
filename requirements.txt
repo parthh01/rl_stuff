@@ -1,8 +1,10 @@
 numpy 
 matplotlib
-gym
+gym[all]
 chess 
 tensorflow
 pyyaml 
 h5py
 progressbar
+mujoco 
+mujoco-py 
