@@ -56,38 +56,13 @@ def main():
     from network import ActorNetwork,CriticNetwork
     from environment import Environment
     
-    env = Environment('Humanoid-v4')
+    #env = Environment('Humanoid-v4')
     #env = Environment('MountainCarContinuous-v0')
-    policy = ActorNetwork(env.state_shape,env.num_actions)
-    critic = CriticNetwork(env.state_shape,env.num_actions)
-    g = env.run_episode(policy,critic)
-    # S,A,R,S_P,D = env.generate_episode_replay_buffer(policy,critic)
-    # print(S.shape)
-    # print(A.shape)
-    # print(R.shape)
-    # print(S_P.shape)
-    # print(D.shape)
-
-    # if terminated: 
-    #     critic_loss = r
-    # else:
-    #     a_prime = policy(tf.expand_dims(tf.convert_to_tensor(s_prime),0),target=True)
-    #     q_prime = critic(tf.expand_dims(tf.convert_to_tensor(s_prime),0),a_prime,target=True)
-    #     critic_loss = r + critic.params['gamma']*q_prime
-    # q = critic(tf.expand_dims(tf.convert_to_tensor(s),0),a)
-    #print('critic ',q)
-
-    terminated = False 
-    # for _ in range(10):
-    #     if terminated: 
-    #         break
-    #     s_prime, r,terminated, info = env.step(env.action_space.sample())
-    #     env.render()
-        # print(env.action_space.sample().shape)
-        # print(s.shape)
-        # print(r)
-        # print(np.concatenate((s,env.action_space.sample()),axis=0).shape)
-
+    env = Environment('Pendulum-v1', g=9.81)
+    policy = ActorNetwork('actor_v0',env.num_actions)
+    critic = CriticNetwork('critic_v0',env.state_shape,env.num_actions)
+    #g = env.run_episode(policy,critic)
+    env.train(policy,critic,success_criterion=[50,10])
 
 
     print('done')
