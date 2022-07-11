@@ -1,6 +1,7 @@
 import gym 
 import numpy as np 
 from tensorflow.keras import models
+import tensorflow as tf 
 import os 
 
 class Agent: 
@@ -33,12 +34,49 @@ class Agent:
 
 
 def main():
-    from network import ActorCriticNetwork
+    """
+    flow: 
+    PolicyNetwork(state) -> action 
+    action,state -> CriticNetwork(state,action) -> Q Value 
+    Environment(action) -> reward, state_prime 
+    if state_prime is not Terminal: 
+        PolicyNetwork(state_prime) -> action_prime
+        PolicyNetwork(state_prime,action_prime) -> q_prime
+        target_q = reward  + gamma*q_prime
+    Else: 
+        target_q = reward
+    Critic Loss = mse(q_value,target_q)
+    CriticNetworkBackprop(Critic Loss) -> DCritic Loss/daction
+    Actor Loss = - Q Value 
+    ActorNetworkBackprop(DCritic Loss/daction) 
+    
 
+    """
 
-    #env = gym.make('Humanoid-v4')
-    env = gym.make('MountainCarContinuous-v0')
-    s,info = env.reset(return_info=True)
+    from network import ActorNetwork,CriticNetwork
+    from environment import Environment
+    
+    env = Environment('Humanoid-v4')
+    #env = Environment('MountainCarContinuous-v0')
+    policy = ActorNetwork(env.state_shape,env.num_actions)
+    critic = CriticNetwork(env.state_shape,env.num_actions)
+    g = env.run_episode(policy,critic)
+    # S,A,R,S_P,D = env.generate_episode_replay_buffer(policy,critic)
+    # print(S.shape)
+    # print(A.shape)
+    # print(R.shape)
+    # print(S_P.shape)
+    # print(D.shape)
+
+    # if terminated: 
+    #     critic_loss = r
+    # else:
+    #     a_prime = policy(tf.expand_dims(tf.convert_to_tensor(s_prime),0),target=True)
+    #     q_prime = critic(tf.expand_dims(tf.convert_to_tensor(s_prime),0),a_prime,target=True)
+    #     critic_loss = r + critic.params['gamma']*q_prime
+    # q = critic(tf.expand_dims(tf.convert_to_tensor(s),0),a)
+    #print('critic ',q)
+
     terminated = False 
     # for _ in range(10):
     #     if terminated: 
@@ -49,9 +87,7 @@ def main():
         # print(s.shape)
         # print(r)
         # print(np.concatenate((s,env.action_space.sample()),axis=0).shape)
-    
-    nn = ActorCriticNetwork(env)
-    nn.learn(success_criterion=[195,100])
+
 
 
     print('done')
