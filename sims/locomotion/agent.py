@@ -57,6 +57,7 @@ def main():
     from environment import Environment
     
     sim = 'Pendulum-v1'
+    #sim = "BipedalWalker-v3"
     #sim = 'Humanoid-v4'
     #sim = 'MountainCarContinuous-v0'
     actor_model = sim + "_actor"

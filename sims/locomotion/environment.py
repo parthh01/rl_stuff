@@ -56,7 +56,8 @@ class Environment:
         s = tf.expand_dims(tf.convert_to_tensor(self.gym.reset()),0) 
         with tf.GradientTape(persistent=True) as tape:
             for t in range(max_steps):
-                a = self.action_scalar*policy(s)
+                noise = np.random.uniform(-policy.params['eps'],policy.params['eps'])
+                a = self.action_scalar*tf.clip_by_value(policy(s) + noise, -1,1)
                 q = critic(s,a)
                 q_loss = critic(s,a,target=True)
                 s,r,terminated,info = self.gym.step(a.numpy()[0])
@@ -65,7 +66,8 @@ class Environment:
                 if terminated: 
                     target_q = tf.constant(r)
                 else: 
-                    a_prime = policy(s,target=True) # dont believe we need to multiply by action scalar here 
+                    noise = np.random.uniform(-policy.params['eps'],policy.params['eps'])
+                    a_prime = tf.clip_by_value(policy(s,target=True) + noise, -1,1) #assuming policy output will always be tanh (-1,1)
                     q_prime = critic(s,a_prime,target=True) # s here is actually s_prime
                     #target_q = tf.math.add(tf.math.scalar_mul(critic.params['gamma'],q_prime),r)
                     target_q = (critic.params['gamma']*q_prime) + r
@@ -121,10 +123,11 @@ class Environment:
                 running_reward_avg = statistics.mean(episodes_reward)
                 t.set_description(f'Episode {i}')
                 t.set_postfix(episode_reward=episode_reward, running_reward=running_reward_avg)
+                critic.sync_target_networks()
                 # Show average episode reward every 10 episodes
-                if i % 10 == 0:
-                    critic.sync_target_networks()
+                if i % actor.params['target_update_freq']: 
                     actor.sync_target_networks()
+                if i % 10 == 0:
                     print(f'Episode {i}: average reward: {running_reward_avg}')
                     sample_s = tf.expand_dims(tf.convert_to_tensor(self.sample_state),0) 
                     a = self.action_scalar*actor(sample_s)

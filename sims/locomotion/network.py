@@ -46,7 +46,7 @@ class BaseNetworkClass(Model):
 
 class ActorNetwork(BaseNetworkClass):
 
-    def __init__(self,model_name,num_actions, hidden_layers: List = [512,512,512],params = {'lr': 0.01, 'tau': 0.001}):
+    def __init__(self,model_name,num_actions, hidden_layers: List = [512,512,512],params = {'lr': 0.01, 'tau': 0.001, 'eps': 0.1, 'target_update_freq': 2}):
         super().__init__(model_name)
         self.params = params 
         #self.state_input_layer = InputLayer(input_shape=sample_state.shape)
