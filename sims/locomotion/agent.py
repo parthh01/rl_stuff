@@ -56,15 +56,17 @@ def main():
     from network import ActorNetwork,CriticNetwork
     from environment import Environment
     
-    #env = Environment('Humanoid-v4')
-    #env = Environment('MountainCarContinuous-v0')
-    env = Environment('Pendulum-v1', g=9.81)
-    policy = ActorNetwork('actor_v0',env.num_actions)
-    critic = CriticNetwork('critic_v0',env.state_shape,env.num_actions)
+    sim = 'Pendulum-v1'
+    #sim = 'Humanoid-v4'
+    #sim = 'MountainCarContinuous-v0'
+    actor_model = sim + "_actor"
+    critic_model = sim + "_critic"
+    env = Environment(sim)
+    policy = ActorNetwork(actor_model,env.num_actions)
+    critic = CriticNetwork(critic_model,env.state_shape,env.num_actions)
     #g = env.run_episode(policy,critic)
     env.train(policy,critic,success_criterion=[50,10])
-
-
+    #env.run(policy,critic)
     print('done')
 
 
