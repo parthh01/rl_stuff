@@ -56,7 +56,8 @@ def main():
     from network import ActorNetwork,CriticNetwork
     from environment import Environment
     
-    sim = 'Pendulum-v1'
+    #sim = 'Pendulum-v1'
+    sim = "LunarLanderContinuous-v2"
     #sim = "BipedalWalker-v3"
     #sim = 'Humanoid-v4'
     #sim = 'MountainCarContinuous-v0'
@@ -66,7 +67,7 @@ def main():
     policy = ActorNetwork(actor_model,env.num_actions)
     critic = CriticNetwork(critic_model,env.state_shape,env.num_actions)
     #g = env.run_episode(policy,critic)
-    env.train(policy,critic,success_criterion=[50,10])
+    env.train(policy,critic,success_criterion=[200,100])
     #env.run(policy,critic)
     print('done')
 

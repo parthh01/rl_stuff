@@ -118,7 +118,7 @@ class CriticNetwork(BaseNetworkClass):
         layers = [Concatenate(axis=-1,trainable = not target)] 
         i = 0
         for l in hidden_layers:
-            layers.append(Dense(l,activation = 'tanh',trainable = not target,kernel_initializer = self.kernel_initializer,name = f"l{i}_{'target' if target else ''}"))
+            layers.append(Dense(l,trainable = not target,kernel_initializer = self.kernel_initializer,name = f"l{i}_{'target' if target else ''}"))
             i += 1
         layers.append(Dense(1,trainable = not target,kernel_initializer = self.kernel_initializer,name = f"l{i}_{'target' if target else ''}"))
         return layers

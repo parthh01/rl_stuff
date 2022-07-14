@@ -1,0 +1,7 @@
+
+
+standard DQN deep rl agent on lunarlands openai gym environment.
+Not sure what alg they're implementing in the notebook but I'll try my own from scratch. 
+
+Problem statement defined here: 
+https://github.com/huggingface/deep-rl-class/tree/main/unit1

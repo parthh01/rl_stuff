@@ -1,6 +1,7 @@
 numpy 
 matplotlib
 gym[all]
+Box2D
 chess 
 tensorflow
 pyyaml 
