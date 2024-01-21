@@ -1,9 +1,11 @@
 numpy 
 matplotlib
+swig
 gym[all]
 Box2D
 chess 
-tensorflow
+tensorflow-macos
+tensorflow-metal
 pyyaml 
 h5py
 progressbar

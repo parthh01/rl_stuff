@@ -22,7 +22,7 @@ class ReplayBuffer:
         self.cache = [] 
 
     def insert_single(self,trajectory : Tuple):
-        assert(len(trajectory)  ==  6) # trajectory must be of form (s,a,r,sp,v,d)
+        assert(len(trajectory)  ==  5) # trajectory must be of form (s,a,r,sp,d)
         self.memory.append(trajectory)
         self.cache.append(trajectory)
     
@@ -39,14 +39,14 @@ class ReplayBuffer:
         sorted_memory = self.memory
         #choosing the examples with the highest error, as those will be the ones the model can learn the most from
         for i in range(N):
-            s,a,r,sp,v,d = sorted_memory[random.randrange(len(self.memory))] #random.randrange(len(self.memory))
+            s,a,r,sp,d = sorted_memory[random.randrange(len(self.memory))] #random.randrange(len(self.memory))
             states.append(s)
             actions.append([a])
             rewards.append([r])
             s_primes.append(sp)
-            values.append([v])
+            #values.append([v])
             terminated.append([d])
-        return [np.array(x) if numpy else x for x in [states,actions,rewards,s_primes,values,terminated]]
+        return [np.array(x) if numpy else x for x in [states,actions,rewards,s_primes,terminated]]
     
     def size(self):
         return len(self.memory)
@@ -68,19 +68,19 @@ class QNetwork:
         num_actions: int,
         num_state_inputs: int, 
         model_name='lunarlanderV0',
-        MODEL_DIR = 'model', 
+        MODEL_DIR = 'models', 
         params = {  
-                    'layer_dims': [64,128,64],
-                    'lr': 1e-4,
+                    'layer_dims': [64,64],
+                    'lr': 6e-4,
                     'eps': 1,
                     'eps_decay': 0.995, 
-                    'min_eps': 0.02,
+                    'min_eps': 0.1,
                     'gamma': 0.99,
                     'tau': 0.001,
                     'batch_size': 64,
-                    'num_episodes': 10000,
+                    'num_episodes': 1000,
                     'episode_time_steps': 999,
-                    'buffer_size': int(1e5) ,
+                    'buffer_size': 50000 ,
                     'update_step': 4},
         ):
         tf.keras.utils.set_random_seed(42)
@@ -101,7 +101,6 @@ class QNetwork:
     def sync_models(self):
         target_model_weights = self.target_model.get_weights()
         model_weights = self.model.get_weights() 
-
         for i in range(len(target_model_weights)):
             target_model_weights[i] = (self.params['tau']*model_weights[i]) + ((1-self.params['tau'])*target_model_weights[i])
         self.target_model.set_weights(target_model_weights)
@@ -120,8 +119,8 @@ class QNetwork:
         for layer in hidden_layer_dims:
             model.add(Dense(layer))
         model.add(Dense(self.num_actions))
-        model.compile(optimizer = self.optimizer, loss = self.loss_fn )
-        model.build((None,self.num_state_inputs))
+        model.compile(optimizer = self.optimizer, loss = 'mse')  #self.loss_fn )
+        #model.build((None,2))
         return model
     
     def build_network(self,**kwargs):
@@ -159,10 +158,20 @@ class QNetwork:
             action = self.e_greedy_policy(s)
             sp,r,terminated,info = env.step(action)
             ap = self.e_greedy_policy(sp,target = True)
-            v = tf.squeeze(tf.gather(self.model(np.expand_dims(s,axis=0)),action,axis=1))
-            self.replay_buffer.insert_single((s,action,r,sp,v,terminated*1))
+            #v = tf.squeeze(tf.gather(self.model(np.expand_dims(s,axis=0)),action,axis=1))
+            self.replay_buffer.insert_single((s,action,r,sp,terminated*1))
             rewards.append(r)
             ctr += 1
+            if (self.replay_buffer.size() > self.params['batch_size']): # and (ctr % self.params['update_step'] == 0)
+                S,A,R,SP,D = self.replay_buffer.get_minibatch(self.params['batch_size'])
+                temp = tf.squeeze(S)
+                QP = self.target_model(SP) #target_model
+                Y = tf.expand_dims(tf.reduce_max(tf.squeeze(R + (self.params['gamma'] *tf.math.multiply(tf.reduce_max(QP,axis=1),1-D))),axis=1),axis=1)
+                Yhat = tf.squeeze(self.model(S))
+                indices = np.array([i for i in range(A.shape[0])]).reshape((A.shape[0],1))
+                Yhat = tf.tensor_scatter_nd_update(Yhat,np.concatenate((indices,A),axis=1),tf.squeeze(Y.numpy()))
+                self.model.fit(S,Yhat,verbose=0)
+                self.sync_models()
             s = sp                
             if terminated: 
                 break 
@@ -181,16 +190,6 @@ class QNetwork:
                 self.params['eps'] = self.params['eps']*self.params['eps_decay']
                 episode_rewards.append(episode_reward)
                 total_timesteps += episode_len
-                if (self.replay_buffer.size() > self.params['batch_size']): # and (ctr % self.params['update_step'] == 0)
-                    S,A,R,SP,V,D = self.replay_buffer.get_minibatch(self.params['batch_size'])
-                    temp = tf.squeeze(self.model(np.expand_dims(S,axis=0)))
-                    QP = self.target_model(np.expand_dims(SP,axis=0))
-                    Y = tf.expand_dims(tf.reduce_max(tf.squeeze(R + (self.params['gamma'] *tf.math.multiply(tf.reduce_max(QP,axis=1),1-D))),axis=1),axis=1)
-                    Yhat = tf.squeeze(self.model(np.expand_dims(S,axis=0)))
-                    indices = np.array([i for i in range(A.shape[0])]).reshape((A.shape[0],1))
-                    Yhat = tf.tensor_scatter_nd_update(Yhat,np.concatenate((indices,A),axis=1),tf.squeeze(Y.numpy()))
-                    self.model.fit(S,Yhat)
-                self.sync_models()
                 if i % 10 == 0:
                     running_reward_avg = statistics.mean(episode_rewards)
                     print(f'Episode {i}: average reward: {running_reward_avg}')
@@ -209,6 +208,7 @@ if __name__ == "__main__":
     import gym
     env = gym.make('LunarLander-v2')
     #env = gym.make('MountainCar-v0')
-    print('s',env.reset())
+    #print('s',env.reset())
     nn = QNetwork(num_state_inputs = env.observation_space.shape[0],num_actions = env.action_space.n)
     nn.train(env)
+    print('done')

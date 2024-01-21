@@ -1,0 +1,3 @@
+
+10/8/2023 --init-- 
+the plan was to try DQN and some other rl policies on some snake game, but I couldn't find a good working one online (idk how) so I just decided to apply this on the first low state action space game I could find on pygame trending. Found this 'Stonks' game which appears to generate price movements in a fairly good enough representation of a geometric random walk/brownian motion or whatever other phenomena people believe stock movements resemble. I like that it has the added dimension of applying for loans and so the theory it'll be interesting to see what, if at all, startegy an agent can learn. (reference to the game dev: https://stonks.markop1.cz/) 
