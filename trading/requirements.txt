@@ -1,2 +1,4 @@
 alpaca-py
 gym-trading-env
+ta
+stable-baselines3
