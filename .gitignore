@@ -3,3 +3,5 @@
 **/__pycache__/*
 snake/Stonks1.2/*
 *.zip
+.vscode
+**/build/*
