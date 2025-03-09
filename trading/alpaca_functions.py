@@ -33,7 +33,7 @@ class AlpacaUtils:
                      if p.symbol == symbol:
                             current_holding = float(self.trading_client.get_open_position(symbol).market_value)
 
-              if size == 0:
+              if size == 0 and current_holding != 0:
                      self.trading_client.close_position(symbol_or_asset_id=symbol)
               else:
                      portfolio_value = float(account.equity)
@@ -100,7 +100,7 @@ class AlpacaUtils:
 
 if __name__ == "__main__":
        alpacaHelper = AlpacaUtils()
-       btc_df = alpacaHelper.build_env_df(start='2024-01-24',interval='min',symbols='BTC/USD',crypto=True)
+       btc_df = alpacaHelper.build_env_df(start='2023-01-01',interval='min',symbols='BTC/USD',crypto=True)
        # alpacaHelper.size_to_order(0.1,"BTCUSD")
        print(btc_df)
        # latest_bar = alpacaHelper.crypto_client.get_crypto_latest_bar(CryptoLatestBarRequest(symbol_or_symbols=['BTC/USD']))

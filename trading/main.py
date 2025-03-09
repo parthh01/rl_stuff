@@ -38,36 +38,35 @@ def run_live(model,symbol='BTC/USD',interval='min',action_space = [round(i,4) fo
 
 
 
+def run_model(model,env):
+    done,truncated= False,False
+    info = None
+    observation,info = env.reset()
+    while not done and not truncated:
+        action, _states = model.predict(observation, deterministic=True)
+        #Pick a position by its index in your position list (=[-1, 0, 1])....usually something like : position_index = your_policy(observation)
+        # action = env.action_space.sample() # At every timestep, pick a random position index from your position list (=[-1, 0, 1])
+        observation, reward, done, truncated, info = env.step(action)
+
+    print(info)
 
 
 def main(): 
     alpacaHelper = AlpacaUtils()
-    btc_df = alpacaHelper.build_env_df('2024-01-01','2024-01-10','min','BTC/USD',True)
+    btc_df = alpacaHelper.build_env_df(start='2024-01-01',interval='min',symbols='BTC/USD',crypto=True)
     env = create_env(btc_df)
     #Parallel environments
     model_path = 'ppo_tradingEnv.zip'
+    device = 'cpu'
     if os.path.exists(model_path):
-        model = PPO.load(model_path,env,verbose=1,device='cpu')
+        model = PPO.load(model_path,env,verbose=1,device=device)
     else:
-        model = PPO("MlpPolicy", env,verbose=1,device='cpu') #seems to be some kind of parallelization error occurring when using 'mps' device
-    vec_env = model.get_env()
-    model.learn(total_timesteps=10_000)
-    # Run an episode until it ends :
-    done,truncated = True, False
-    info = None
-    observation = vec_env.reset()
+        model = PPO("MlpPolicy", env,verbose=1,device=device) #seems to be some kind of parallelization error occurring when using 'mps' device
+    model.learn(total_timesteps=15_00)
     model.save("ppo_tradingEnv")
-    while not done and not truncated:
-        action, _states = model.predict(observation, deterministic=True)
-        print('action: ',[round(i,4) for i in np.arange(0,1.1,0.1)][action[0]])
-        #Pick a position by its index in your position list (=[-1, 0, 1])....usually something like : position_index = your_policy(observation)
-        # action = env.action_space.sample() # At every timestep, pick a random position index from your position list (=[-1, 0, 1])
-        observation, reward, done, info = vec_env.step(action)
-        print('reward',reward)
-    print(info)
+    # Run an episode until it ends :
+    run_model(model,env)
     env.close()
-    vec_env.close()
-
 ## psuedo code for live trading 
     # model = PPO.load(model_name)
     # action_space = [round(i,4) for i in np.arange(0,1.1,0.1)]
@@ -85,6 +84,6 @@ def main():
     
 
 if __name__ == "__main__":
-    # main()
-    model = PPO.load('ppo_tradingEnv.zip')
-    run_live(model)
+    main()
+    #model = PPO.load('ppo_tradingEnv.zip')
+    #run_live(model)
