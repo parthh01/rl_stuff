@@ -5,20 +5,23 @@
 #include <cassert> 
 #include <iostream>
 #include <torch/torch.h>
+#include <string>
 
 using namespace std; 
 
 struct Game {
 	vector<vector<char> > state; 
-	bool turn; 
-	char winner;
+	bool turn = true; 
+	char winner = ' ';
+	bool over = false;
+	int WIN_REWARD = 10;
 
 	torch::Tensor get_state_tensor() const {
 		int n = state.size(); 
 		torch::Tensor state_tensor = torch::zeros((n*n) + 1, torch::kFloat32); // the board state + 1 feature denoting which char the player is
 		for (int i=0;i < n;i++){
 			for (int j=0;j < n;j++){
-				state_tensor[i*n + j] = state[i][j]; 
+				state_tensor[i*n + j] = state[i][j] == 'X' ? 1 : -1; 
 			}
 		}
 		state_tensor[n*n] = turn ? 1 : 0; // essentially a one hot encoding of the character who's turn it is
@@ -38,8 +41,9 @@ struct Game {
 		return moves; 
 	}
 
-	void print_board() const {
-		int n = state.size(); 
+
+	void visualize_board(vector<vector<char> > board) const {
+		int n = board.size(); 
 		for (int i=0;i < n;i++){
 			for(int j=0;j < n;j++){
 				cout << " " << state[i][j] << " ";
@@ -60,10 +64,14 @@ struct Game {
 		}
 	}
 
+	void print_board() const {
+		visualize_board(state); 
+	}
+
 	void check_winner() {
 		int n = state.size(); 
 		for (int i=0;i < n;i++){
-			if (state[i][i] != ' '){
+			if (state[i][0] != ' '){
 				bool row_win = true; 
 				for (int j=1;j < n;j++){
 					if (state[i][j] != state[i][0]){
@@ -73,6 +81,7 @@ struct Game {
 				}
 				if (row_win) {
 					winner = state[i][0]; 
+					over = true; 
 					return; 
 				}
 			}
@@ -90,6 +99,7 @@ struct Game {
 				}
 				if (col_win) {
 					winner = state[0][j]; 
+					over = true; 
 					return; 
 				}
 			}
@@ -106,6 +116,7 @@ struct Game {
 			}
 			if (diag_win) {
 				winner = state[0][0]; 
+				over = true; 
 				return; 
 			}
 		}
@@ -120,10 +131,20 @@ struct Game {
 			}
 			if (anti_diag_win) {
 				winner = state[0][n-1]; 
+				over = true; 
 				return; 
 			}
 		}
 
+		// check if there are no empty spaces left
+		for (int i=0;i < n;i++){
+			for (int j=0;j < n;j++){
+				if (state[i][j] == ' '){
+					return; 
+				}
+			}
+		}
+		over = true; 
 		return; 
 	}
 
@@ -146,16 +167,33 @@ struct Game {
 		return result;
 	}
 
-	int play_move(int row, int col){	
-		assert(row >= 0 && row < state.size() && col >= 0 && col < state[0].size() && state[row][col] == ' '); 
-		state[row][col] = turn ? 'X' : 'O'; 
+	float play_move(int row, int col){
+		char current_player = turn ? 'X' : 'O';	
+		if (!(row >= 0 && row < state.size() && col >= 0 && col < state[0].size() && state[row][col] == ' ')) {
+			cout << "Invalid Move: row=" << row << ", col=" << col << endl;
+			cout << "Current board state:" << endl;
+			cout << "Valid moves: " << get_valid_moves() << endl;
+			print_board();
+			assert(false && "Invalid move detected");
+		}
+		state[row][col] = current_player; 
 		turn = !turn; 
 		check_winner(); 
-		return winner == ' ' ? 0 : (winner == 'X' ? 1 : -1); 
+		return winner == ' ' ? 0 : (winner == current_player ? WIN_REWARD : -WIN_REWARD); 
+	}
+
+	void print_state_tensor(torch::Tensor& state_tensor, int n) {
+		vector<vector<char>> board(n, vector<char>(n, ' ')); 
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < n; j++) {
+				int val = state_tensor[i*n + j].item<int>();
+				board[i][j] = val == 1 ? 'X' : val == -1 ? 'O' : ' ';
+			}
+		}
+		visualize_board(board);
 	}
 
 }; 
-
 
 Game generate_new_game(int n){
 	Game new_game; 
@@ -163,6 +201,7 @@ Game generate_new_game(int n){
 	new_game.state = board; 
 	new_game.turn = true; 
 	new_game.winner = ' '; 
+	new_game.over = false;
 	return new_game; 
 }; 
 
