@@ -196,7 +196,7 @@ env = Monitor(env)
 
 
 
-def evaluate_reward_shaping(base_env, reward_shaping_fn, timesteps=1e5, runs=3, env_name="Unknown"):
+def evaluate_reward_shaping(base_env, reward_shaping_fn, timesteps=1e5, runs=3, env_name="Unknown",policy="MlpPolicy",device="cpu"):
     """
     Evaluates the efficacy of a reward shaping function by comparing training with and without it.
     
@@ -241,7 +241,7 @@ def evaluate_reward_shaping(base_env, reward_shaping_fn, timesteps=1e5, runs=3, 
         # Train without reward shaping
         print("Training without reward shaping...")
         env_no_shaping = Monitor(create_env())
-        model_no_shaping = PPO("MlpPolicy", env_no_shaping, verbose=0,seed=SEED)
+        model_no_shaping = PPO(policy, env_no_shaping, verbose=0,seed=SEED,device=device)
         callback_no_shaping = MetricsCallback()
         model_no_shaping.learn(total_timesteps=int(timesteps), callback=callback_no_shaping)
         results["no_shaping"]["rewards"].append(callback_no_shaping.rewards)
@@ -254,7 +254,7 @@ def evaluate_reward_shaping(base_env, reward_shaping_fn, timesteps=1e5, runs=3, 
         # Train with fixed reward shaping
         print("Training with fixed reward shaping...")
         env_shaping = Monitor(RewardShapingWrapper(create_env(), reward_shaping_fn))
-        model_shaping = PPO("MlpPolicy", env_shaping, verbose=0,seed=SEED)
+        model_shaping = PPO(policy, env_shaping, verbose=0,seed=SEED,device=device)
         callback_shaping = MetricsCallback(track_original_rewards=True)
         model_shaping.learn(total_timesteps=int(timesteps), callback=callback_shaping)
         # Store both shaped and original rewards
@@ -270,7 +270,7 @@ def evaluate_reward_shaping(base_env, reward_shaping_fn, timesteps=1e5, runs=3, 
         print("Training with adaptive reward shaping...")
         env_adaptive = Monitor(AdaptiveRewardShapingWrapper(
             create_env(), reward_shaping_fn, adaptation_rate=0.05, window_size=20))
-        model_adaptive = PPO("MlpPolicy", env_adaptive, verbose=0,seed=SEED)
+        model_adaptive = PPO(policy, env_adaptive, verbose=0,seed=SEED,device=device)
         callback_adaptive = MetricsCallback(track_original_rewards=True)
         model_adaptive.learn(total_timesteps=int(timesteps), callback=callback_adaptive)
         # Store both shaped and original rewards
@@ -537,16 +537,27 @@ if __name__ == "__main__":
     #     runs=1,
     #     env_name=ENV_NAME
     # )
-    ENV_NAME = "CartPole-v1"
+    #ENV_NAME="CartPole-v1"
+    # ENV_NAME="BipedalWalker-v3"
+    # env = gym.make(ENV_NAME,render_mode="rgb_array")
+    # results = evaluate_reward_shaping(
+    #     base_env=env,
+    #     reward_shaping_fn=bipedal_walker_reward_shaping,
+    #     timesteps=1e5,  # Reduced for faster evaluation
+    #     runs=10,
+    #     env_name=ENV_NAME,
+    # )
+    ENV_NAME="CarRacing-v2"
     env = gym.make(ENV_NAME,render_mode="rgb_array")
     results = evaluate_reward_shaping(
         base_env=env,
-        reward_shaping_fn=cartpole_reward_shaping,
-        timesteps=1e4,  # Reduced for faster evaluation
+        reward_shaping_fn=car_racing_reward_shaping,
+        timesteps=5e4,  # Reduced for faster evaluation
         runs=10,
         env_name=ENV_NAME,
+        policy="CnnPolicy",
+        device="mps"
     )
-
 
     
  

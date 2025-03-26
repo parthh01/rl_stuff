@@ -1,5 +1,3 @@
-
-
 import numpy as np
 
 # Define your reward shaping function
@@ -79,3 +77,90 @@ def cartpole_reward_shaping(prev_obs, action, reward, obs, done, truncated, info
     shaping_reward = angle_reward + vel_reward + pos_reward + cart_vel_reward
     
     return shaping_reward
+
+def bipedal_walker_reward_shaping(prev_obs, action, reward, obs, done, truncated, info):
+    """
+    Minimal reward shaping for BipedalWalker-v3 environment.
+    
+    This function provides subtle hints to guide learning without
+    overwhelming the intrinsic reward structure of the environment.
+    
+    The default BipedalWalker reward is well-designed, so we'll only
+    add small nudges in the right direction.
+    """
+    # Extract relevant observations
+    hull_angle = obs[0]  # Hull angle
+    horizontal_speed = obs[2]  # Horizontal velocity
+    
+    # 1. Small bonus for staying upright (hull angle close to 0)
+    # This helps early learning to not fall over immediately
+    upright_bonus = 0.05 * (1.0 - min(1.0, abs(hull_angle) * 2))
+    
+    # 2. Small bonus for moving forward at a reasonable speed
+    # Encourages initial steps in the right direction
+    speed_bonus = 0.05 * min(1.0, max(0, horizontal_speed))
+    
+    # 3. Small penalty for falling (in addition to the environment's -100)
+    # This helps emphasize the importance of not falling
+    fall_penalty = -1.0 if done and not truncated and reward <= -100 else 0.0
+    
+    # Keep the shaping reward small relative to the environment reward
+    shaping = upright_bonus + speed_bonus + fall_penalty
+    
+    return shaping
+
+def car_racing_reward_shaping(prev_obs, action, reward, obs, done, truncated, info):
+    """
+    Simple reward shaping for CarRacing-v3 environment.
+    
+    This function focuses on a single key driving behavior:
+    - Encouraging the car to slow down when turning (cornering)
+    
+    Args:
+        prev_obs: Previous observation (96x96 RGB image)
+        action: Action taken [steering, gas, brake] or discrete action
+        reward: Original reward from the environment
+        obs: Current observation (96x96 RGB image)
+        done: Whether the episode is done
+        truncated: Whether the episode was truncated
+        info: Additional information
+        
+    Returns:
+        Shaping reward component
+    """
+    # Check if we're using continuous or discrete actions
+    continuous_actions = hasattr(action, "__len__")
+    
+    # Extract action information
+    if continuous_actions:
+        steering = action[0]  # -1 (left) to 1 (right)
+        gas = action[1]       # 0 to 1
+        brake = action[2]     # 0 to 1
+    else:
+        # Discrete actions
+        steering = -1 if action == 1 else (1 if action == 2 else 0)
+        gas = 1 if action == 3 else 0
+        brake = 1 if action == 4 else 0
+    
+    # Calculate the absolute steering angle
+    abs_steering = abs(steering)
+    
+    # Reward for appropriate cornering behavior:
+    # 1. Reward reducing speed (using brake or reducing gas) during sharp turns
+    # 2. Penalize high speed during sharp turns
+    
+    if abs_steering > 0.3:  # If turning moderately to sharply
+        # Reward braking during turns
+        brake_reward = 0.1 * brake * abs_steering
+        
+        # Penalize high gas during sharp turns
+        # The penalty increases with steering angle and gas amount
+        gas_penalty = -0.2 * gas * abs_steering
+        
+        # Combine the cornering rewards
+        cornering_reward = brake_reward + gas_penalty
+    else:
+        # No cornering reward when going straight
+        cornering_reward = 0.0
+    
+    return cornering_reward

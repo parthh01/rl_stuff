@@ -82,9 +82,18 @@ The following results demonstrate the effectiveness of Wisdom Bootstrapping acro
 
 
 
-### MountainCar Environment
+### LunarLander Environment
 
 ![LunarLander Results](images/lunar2.png)
+
+Final Evaluation Summary:
+no_shaping: -366.48 ± 0.00
+with_shaping: -169.60 ± 0.00
+adaptive_shaping: -198.83 ± 0.00
+
+### Walker Environment
+
+![Walker Results](images/walker1.png)
 
 Final Evaluation Summary:
 no_shaping: -366.48 ± 0.00
